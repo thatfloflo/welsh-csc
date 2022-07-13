@@ -1,2 +1,15 @@
 # Raw and processed data files - should be hosted elsewhere due to size
-./data/
+/data/
+
+# Python cache and artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/
