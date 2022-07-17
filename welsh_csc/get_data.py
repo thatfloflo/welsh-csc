@@ -4,7 +4,7 @@ import requests
 import concurrent.futures
 import re
 from pathlib import Path
-from .click_ext import URLParamType, report_http_error, report_url_error
+from .click_ext import URLParamType, report_http_error, report_url_error, report_exception
 
 
 @click.option(
@@ -60,7 +60,7 @@ def _get_data(remote_url: str, destination: Path):
     index = _build_remote_index(remote_url)
     if not index:
         return
-    operands = zip(index, map(lambda s: destination / s.split("/")[-1], index))
+    operands = zip(index, map(lambda s: destination / s[len(remote_url)+1:], index))
     session = requests.Session()
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = {
@@ -74,18 +74,34 @@ def _get_data(remote_url: str, destination: Path):
             label='Downloading files',
             show_eta=True,
             show_pos=True,
-            bar_template=click.style('%(label)s  [%(bar)s]  %(info)s', dim=True),
+            bar_template=click.style('%(label)s  %(bar)s  %(info)s', dim=True),
+            empty_char=click.style("▓", fg=240, dim=True),
+            fill_char=click.style("█", fg="yellow", dim=False),
             color=True
         ) as pbar:  # type: ignore
-            for future in concurrent.futures.as_completed(futures):
-                pbar.update(1)  # type: ignore
-                if error := future.exception():
-                    err_url = futures[future]
-                    errors[err_url] = error
+            try:
+                for future in concurrent.futures.as_completed(futures):
+                    pbar.update(1)  # type: ignore
+                    if error := future.exception():
+                        err_url = futures[future]
+                        errors[err_url] = error
+            except KeyboardInterrupt:
+                click.echo()
+                click.secho(
+                    "Keyboard Interrupt Caught!",
+                    bg="red", fg="white", bold=True, nl=False, err=True
+                )
+                click.secho(
+                    " The process will terminate once all active downloads have finished.",
+                    err=True
+                )
+                executor.shutdown(wait=True, cancel_futures=True)
+                raise
         for err_url, error in errors.items():
-            click.secho("ERROR: ", bold=True, fg="red", nl=False, err=True)
             if isinstance(error, requests.HTTPError):
                 report_http_error(err_url, error.response.status_code)
+            elif isinstance(error, IOError):
+                report_exception("Could not open file for writing", error)
             else:
                 report_url_error(err_url, str(error))
 
@@ -96,7 +112,8 @@ def _download_file(
     chunk_size: int = 1_048_576,
     session: requests.Session | None = None
 ):
-    with destination.open("wb", chunk_size*5) as fp:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with destination.open("wb", chunk_size*5, ) as fp:
         getter = session.get if session else requests.get
         r = getter(remote_url, stream=True)
         r.raise_for_status()

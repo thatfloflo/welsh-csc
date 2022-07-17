@@ -108,6 +108,7 @@ class URLParamType(click.ParamType):
 
 
 def report_http_error(url: str, status_code: int):
+    click.secho("ERROR: ", bold=True, fg="red", nl=False, err=True)
     click.echo("The URL ", nl=False, err=True)
     click.secho(url, fg="blue", nl=False, err=True)
     click.echo(" returned an HTTP Error (", nl=False, err=True)
@@ -116,8 +117,17 @@ def report_http_error(url: str, status_code: int):
 
 
 def report_url_error(url: str, message: str):
+    click.secho("ERROR: ", bold=True, fg="red", nl=False, err=True)
     click.echo("The URL ", nl=False, err=True)
     click.secho(url, fg="blue", nl=False, err=True)
     click.echo(" is not a valid URL or could not be opened (", nl=False, err=True)
     click.secho(message, fg="yellow", nl=False, err=True)
+    click.echo(")")
+
+
+def report_exception(message: str, exc: BaseException):
+    click.secho("ERROR: ", bold=True, fg="red", nl=False, err=True)
+    click.echo(message, nl=False, err=True)
+    click.echo(" (", nl=False, err=True)
+    click.secho(str(exc), fg="yellow", nl=False, err=True)
     click.echo(")")
