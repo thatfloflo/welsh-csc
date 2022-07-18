@@ -3,6 +3,7 @@ import click_spinner
 import requests
 import concurrent.futures
 import re
+from io import DEFAULT_BUFFER_SIZE
 from pathlib import Path
 from .click_ext import URLParamType, report_http_error, report_url_error, report_exception
 
@@ -109,7 +110,7 @@ def _get_data(remote_url: str, destination: Path):
 def _download_file(
     remote_url: str,
     destination: Path,
-    chunk_size: int = 1_048_576,
+    chunk_size: int = DEFAULT_BUFFER_SIZE,  # Alternative option: 1_048_576,
     session: requests.Session | None = None
 ):
     destination.parent.mkdir(parents=True, exist_ok=True)
