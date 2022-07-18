@@ -55,7 +55,7 @@ def _make_mono(component: str, path: Path):
             empty_char=click.style("▓", fg=240, dim=True),
             fill_char=click.style("█", fg="yellow", dim=False),
             color=True
-        ) as pbar:
+    ) as pbar:  # type: ignore
         error_stack: list[Exception] = []
         for file in files:
             try:
@@ -76,11 +76,10 @@ def extract_first_channel(source_file: Path, dest_file: Path):
                 dfp.setparams(sfp.getparams())
                 dfp.setnchannels(1)
                 sframes = sfp.readframes(sfp.getnframes())
-                sdata = unpack("%dh" %  2*sfp.getnframes(), sframes)
+                sdata = unpack("%dh" % 2*sfp.getnframes(), sframes)
                 ddata = pack("%dh" % sfp.getnframes(), *sdata[0::2])
                 dfp.writeframes(ddata)
     except Exception as e:
         raise Exception(
             f"An error occured while extracting the first channel from the file {source_file}"
         ) from e
-
