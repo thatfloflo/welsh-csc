@@ -9,7 +9,7 @@ from .click_ext import URLParamType, report_http_error, report_url_error, report
 
 
 @click.option(
-    "-d", "--dest",
+    "-p", "--path",
     type=click.Path(
         exists=True, file_okay=False, resolve_path=True, writable=True, path_type=Path
     ),
@@ -29,13 +29,13 @@ from .click_ext import URLParamType, report_http_error, report_url_error, report
     help="URL for the remote server from which to fetch data. [default: https://data.ling101.com]"
 )
 @click.argument("component", type=click.Choice(["all", "raw", "chopped"], case_sensitive=False))
-def get_data(component: str, dest: Path, channel: str, remote: str):
+def get_data(component: str, path: Path, channel: str, remote: str):
     """Retrieve the Welsh CSC data from remote host.
 
     Existing data files will not be overwritten. To replace files, delete them first (or rename
     them by adding *.bak at the end).
 
-    The destination path must already exist and be writeable. By default ./data is assumed
+    The data path must already exist and be writeable. By default ./data is assumed
     (relative to the current working directory). Depending on the provided options, subdirectories
     with the names raw-1ch, raw-2ch, chopped-1ch, chopped-2ch may be created.
     """
@@ -46,11 +46,11 @@ def get_data(component: str, dest: Path, channel: str, remote: str):
     # Report parameters to user
     click.secho("Assets to be downloaded: ", bold=True, nl=False)
     click.echo(", ".join(click.style(target, fg="yellow") for target in targets))
-    click.secho("Destination directory: ", bold=True, nl=False)
-    click.secho(dest, fg="yellow")
+    click.secho("Data directory: ", bold=True, nl=False)
+    click.secho(path, fg="yellow")
     for target in targets:
         remote_url = f"{remote}{target}" if remote.endswith("/") else f"{remote}/{target}"
-        destination = dest / target
+        destination = path / target
         destination.mkdir(exist_ok=True)
         _get_data(remote_url, destination)
 
