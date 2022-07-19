@@ -1,8 +1,11 @@
 import click
 import wave
+import concurrent.futures
+import os
 from pathlib import Path
 from struct import unpack, pack
 from .click_ext import report_exception
+from .util import copy_files
 
 
 @click.option(
@@ -33,6 +36,11 @@ def make_mono(component: str, path: Path):
     click.secho(path, fg="yellow")
     for component in components:
         _make_mono(component, path)
+        copy_files(
+            path / component,
+            path / component.replace("-2ch", "-1ch"),
+            {".txt", ".TextGrid", ".lab"}
+        )
 
 
 def _make_mono(component: str, path: Path):
@@ -46,25 +54,48 @@ def _make_mono(component: str, path: Path):
             for source in sources
         )
     ]
-    with click.progressbar(
-            length=len(files),
-            label='Monoising files',
-            show_eta=True,
-            show_pos=True,
-            bar_template=click.style('%(label)s  %(bar)s  %(info)s', dim=True),
-            empty_char=click.style("▓", fg=240, dim=True),
-            fill_char=click.style("█", fg="yellow", dim=False),
-            color=True
-    ) as pbar:  # type: ignore
-        error_stack: list[Exception] = []
-        for file in files:
+    with concurrent.futures.ProcessPoolExecutor(
+        max_workers=min(4, os.cpu_count() or 1)
+    ) as executor:
+        futures = {
+            executor.submit(extract_first_channel, *file): file
+            for file in files
+        }
+        with click.progressbar(
+                length=len(futures),
+                label='Monoising files',
+                show_eta=True,
+                show_pos=True,
+                bar_template=click.style('%(label)s  %(bar)s  %(info)s', dim=True),
+                empty_char=click.style("▓", fg=240, dim=True),
+                fill_char=click.style("█", fg="yellow", dim=False),
+                color=True
+        ) as pbar:  # type: ignore
+            error_stack: dict[tuple[Path, Path], BaseException] = {}
             try:
-                extract_first_channel(*file)
-            except Exception as e:
-                error_stack.append(e)
-            pbar.update(1)  # type: ignore
-        for error in error_stack:
-            report_exception("Couldn't convert file", error)
+                for future in concurrent.futures.as_completed(futures):
+                    pbar.update(1)  # type: ignore
+                    if error := future.exception():
+                        err_file = futures[future]
+                        error_stack[err_file] = error
+                click.echo()
+            except KeyboardInterrupt:
+                click.echo()
+                click.secho(
+                    "Keyboard Interrupt Caught!",
+                    bg="red", fg="white", bold=True, nl=False, err=True
+                )
+                click.secho(
+                    " The process will terminate once all active downloads have finished.",
+                    err=True
+                )
+                executor.shutdown(wait=True, cancel_futures=True)
+                raise
+            for files, error in error_stack.items():
+                report_exception(
+                    f"Couldn't convert file '{click.style(files[0], fg='yellow')}'",
+                    error
+                )
 
 
 def extract_first_channel(source_file: Path, dest_file: Path):
@@ -75,10 +106,19 @@ def extract_first_channel(source_file: Path, dest_file: Path):
                 dfp: wave.Wave_write
                 dfp.setparams(sfp.getparams())
                 dfp.setnchannels(1)
-                sframes = sfp.readframes(sfp.getnframes())
-                sdata = unpack("%dh" % 2*sfp.getnframes(), sframes)
-                ddata = pack("%dh" % sfp.getnframes(), *sdata[0::2])
-                dfp.writeframes(ddata)
+                snframes = sfp.getnframes()
+                remaining = snframes
+                while remaining > 0:
+                    chunk = min(32_768, remaining)
+                    remaining -= chunk
+                    sframes = sfp.readframes(chunk)
+                    sdata = unpack("%dh" % 2*chunk, sframes)
+                    ddata = pack("%dh" % chunk, *sdata[0::2])
+                    dfp.writeframes(ddata)
+                # sframes = sfp.readframes(sfp.getnframes())
+                # sdata = unpack("%dh" % 2*sfp.getnframes(), sframes)
+                # ddata = pack("%dh" % sfp.getnframes(), *sdata[0::2])
+                # dfp.writeframes(ddata)
     except Exception as e:
         raise Exception(
             f"An error occured while extracting the first channel from the file {source_file}"
