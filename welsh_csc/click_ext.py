@@ -1,6 +1,7 @@
 import click
 import urllib.request
 import urllib.error
+from functools import partial
 from typing import Container, Final
 
 
@@ -136,3 +137,14 @@ def report_exception(message: str, exc: BaseException):
     click.echo(" (", nl=False, err=True)
     click.secho(str(exc), fg="yellow", nl=False, err=True)
     click.echo(")")
+
+
+progressbar = partial(
+    click.progressbar,
+    show_eta=True,
+    show_pos=True,
+    bar_template=click.style('%(label)s  %(bar)s  %(info)s', dim=True),
+    empty_char=click.style("▓", fg=240, dim=True),
+    fill_char=click.style("█", fg="yellow", dim=False),
+    color=True
+)
