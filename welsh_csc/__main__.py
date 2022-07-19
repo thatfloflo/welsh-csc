@@ -2,6 +2,7 @@
 import click
 from typing import Any
 from .get_data import get_data
+from .get_meta import get_meta
 from .make_mono import make_mono
 
 
@@ -12,6 +13,7 @@ def main(**kwargs: dict[str, Any]):
 
 
 main.command(get_data)
+main.command(get_meta)
 main.command(make_mono)
 
 if __name__ == "__main__":
