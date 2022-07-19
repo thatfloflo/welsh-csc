@@ -72,3 +72,19 @@ def rebase_path(path: Path, source_base: Path, target_base: Path) -> Path:
     if not path.is_relative_to(source_base):
         raise ValueError(f"Path {path} not relative to source base {source_base}")
     return target_base / path.relative_to(source_base)
+
+
+def map_stimulus_to_ascii(string: str):
+    mapping: dict[str, str] = {
+        'â': 'aa', 'ê': 'ee', 'î': 'ii', 'ô': 'oo', 'û': 'uu', 'ŵ': 'ww', 'ŷ': 'yy',
+        'Â': 'AA', 'Ê': 'EE', 'Î': 'II', 'Ô': 'OO', 'Û': 'UU', 'Ŵ': 'WW', 'Ŷ': 'YY',
+        'ä': 'a',  'ë': 'e',  'ï': 'i',  'ö': 'o',  'ü': 'u',  'ẅ': 'w',  'ÿ': 'y',
+        'Ä': 'A',  'Ë': 'E',  'Ï': 'I',  'Ö': 'O',  'Ü': 'U',  'Ẅ': 'W',  'Ÿ': 'Y',
+        'á': 'a',  'é': 'e',  'í': 'i',  'ó': 'o',  'ú': 'u',  'ẃ': 'w',  'ý': 'y',
+        'Á': 'A',  'É': 'E',  'Í': 'I',  'Ó': 'O',  'Ú': 'U',  'Ẃ': 'W',  'Ý': 'Y',
+        'à': 'a',  'è': 'e',  'ì': 'i',  'ò': 'o',  'ù': 'u',  'ẁ': 'w',  'ỳ': 'y',
+        'À': 'A',  'È': 'E',  'Ì': 'I',  'Ò': 'O',  'Ù': 'U',  'Ẁ': 'W',  'Ỳ': 'Y',
+    }
+    for k, v in mapping.items():
+        string = string.replace(k, v)
+    return string
