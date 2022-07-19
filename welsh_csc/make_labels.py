@@ -11,7 +11,15 @@ from pathlib import Path
     help="The directory where the data files are stored."
 )
 def make_labels(path: Path):
-    """Make labels for chopped data files."""
+    """Make labels for chopped data files.
+
+    Makes *.lab files from the list of stimuli, which are needed for forced alignment
+    with the ProsodyLab Aligner (used by this toolset).
+
+    Assumes that the file meta/stimuli.txt already exists inside the directory defined
+    by --path (./data by default). If this is not the case, use the get-meta command
+    to obtain it.
+    """
 
     indir = "./stimuli"
     outdir = "./labels"
