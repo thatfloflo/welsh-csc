@@ -86,7 +86,7 @@ def _make_mono(component: str, path: Path):
                     bg="red", fg="white", bold=True, nl=False, err=True
                 )
                 click.secho(
-                    " The process will terminate once all active downloads have finished.",
+                    " The process will terminate once all active mono conversions are complete.",
                     err=True
                 )
                 executor.shutdown(wait=True, cancel_futures=True)
@@ -115,10 +115,6 @@ def extract_first_channel(source_file: Path, dest_file: Path):
                     sdata = unpack("%dh" % 2*chunk, sframes)
                     ddata = pack("%dh" % chunk, *sdata[0::2])
                     dfp.writeframes(ddata)
-                # sframes = sfp.readframes(sfp.getnframes())
-                # sdata = unpack("%dh" % 2*sfp.getnframes(), sframes)
-                # ddata = pack("%dh" % sfp.getnframes(), *sdata[0::2])
-                # dfp.writeframes(ddata)
     except Exception as e:
         raise Exception(
             f"An error occured while extracting the first channel from the file {source_file}"
