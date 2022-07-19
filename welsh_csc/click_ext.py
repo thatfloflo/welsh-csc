@@ -107,6 +107,11 @@ class URLParamType(click.ParamType):
         return value
 
 
+def report_error(message: str):
+    click.secho("ERROR: ", bold=True, fg="red", nl=False, err=True)
+    click.echo(message, err=True)
+
+
 def report_http_error(url: str, status_code: int):
     click.secho("ERROR: ", bold=True, fg="red", nl=False, err=True)
     click.echo("The URL ", nl=False, err=True)
