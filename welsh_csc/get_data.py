@@ -3,8 +3,10 @@ import click_spinner
 import requests
 import concurrent.futures
 import re
+import shutil
 from io import DEFAULT_BUFFER_SIZE
 from pathlib import Path
+from functools import partial
 from .click_ext import URLParamType, report_http_error, report_url_error, report_exception
 
 
@@ -110,7 +112,7 @@ def _get_data(remote_url: str, destination: Path):
 def _download_file(
     remote_url: str,
     destination: Path,
-    chunk_size: int = DEFAULT_BUFFER_SIZE,  # Alternative option: 1_048_576,
+    chunk_size: int = DEFAULT_BUFFER_SIZE,  # Alternative sensible option: 1_048_576,
     session: requests.Session | None = None
 ):
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -118,8 +120,8 @@ def _download_file(
         getter = session.get if session else requests.get
         r = getter(remote_url, stream=True)
         r.raise_for_status()
-        for chunk in r.iter_content(chunk_size=chunk_size):
-            fp.write(chunk)
+        r.raw.read = partial(r.raw.read, decode_content=True)
+        shutil.copyfileobj(r.raw, fp)
 
 
 def _build_remote_index(remote_url: str) -> list[str]:
