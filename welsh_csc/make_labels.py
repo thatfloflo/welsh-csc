@@ -57,7 +57,7 @@ def make_label_files(path: Path, stimuli: Collection[str]):
 
 def make_label_file(label_path: Path, stimulus: str):
     ascii_alias = map_stimulus_to_ascii(stimulus)
-    stimulus = f"DYWEDDA {stimulus.upper()} UNWAITH ETO"
+    stimulus = f"DYWEDA {stimulus.upper()} UNWAITH ETO"
     files = {label_path / f"{ascii_alias}-{n}.lab" for n in (1, 2, 3, 4)}
     for file in files:
         with file.open("w", encoding="utf-8") as fp:
